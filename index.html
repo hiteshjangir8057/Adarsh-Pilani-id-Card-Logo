@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AVN Professional Dashboard - Page Wise</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --accent: #b45309;
+            --sidebar-bg: #0f172a;
+            --card-w: 95mm;
+            --card-h: 62mm;
+            --page-w: 210mm;
+            --page-h: 297mm;
+        }
+
+        @page { 
+            size: A4; 
+            margin: 0; 
+        }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: #cbd5e1;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: 320px; background: var(--sidebar-bg); color: white;
+            padding: 15px; height: 100vh; overflow-y: auto;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.3); flex-shrink: 0;
+        }
+
+        .sidebar h2 { font-size: 16px; color: #fbbf24; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 15px; }
+
+        .sidebar-section {
+            background: #1e293b; padding: 12px; border-radius: 8px; margin-bottom: 15px;
+            border: 1px solid #334155;
+        }
+
+        .sidebar-section label { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 5px; }
+
+        input[type="text"], input[type="file"], select {
+            width: 100%; padding: 8px; background: #0f172a; color: white;
+            border: 1px solid #334155; border-radius: 4px; font-size: 12px; margin-bottom: 10px;
+        }
+
+        .preset-btn {
+            width: 100%; background: #334155; color: #fbbf24; border: 1px solid #fbbf24;
+            padding: 8px; border-radius: 4px; cursor: pointer; font-size: 10px; margin-bottom: 5px;
+        }
+        .preset-btn:hover { background: #fbbf24; color: #000; }
+
+        .print-btn {
+            width: 100%; padding: 15px; background: #fbbf24; color: #000;
+            border: none; font-weight: 800; border-radius: 8px; cursor: pointer;
+            text-transform: uppercase; margin-top: 10px;
+        }
+
+        /* --- MAIN VIEWPORT --- */
+        .viewport {
+            flex-grow: 1; display: flex; height: 100vh; overflow: hidden;
+        }
+
+        /* A4 Page View on Screen */
+        .preview-area {
+            flex: 2.5; padding: 20px; overflow-y: auto;
+            display: flex; flex-direction: column; align-items: center;
+            border-right: 2px solid #94a3b8;
+            scroll-behavior: smooth;
+        }
+
+        /* Real A4 Sheet Style on Web */
+        .a4-page {
+            width: var(--page-w);
+            height: var(--page-h);
+            background: white;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            padding: 10mm 5mm; /* Page Margins */
+            box-sizing: border-box;
+            display: grid;
+            grid-template-columns: repeat(2, var(--card-w));
+            grid-template-rows: repeat(4, var(--card-h));
+            gap: 4mm 6mm;
+            justify-content: center;
+            page-break-after: always;
+            position: relative;
+        }
+
+        /* Excel Viewer */
+        .excel-view {
+            flex: 1; background: white; padding: 15px; overflow: auto;
+        }
+        .excel-view h3 { font-size: 14px; margin-top: 0; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        th, td { border: 1px solid #e2e8f0; padding: 6px; text-align: left; }
+
+        /* --- CARD DESIGN --- */
+        .card {
+            width: var(--card-w); height: var(--card-h); background: white;
+            border-radius: 10px; border: 2px solid #1e293b;
+            position: relative; overflow: hidden;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+        }
+
+        .header {
+            height: 70px; background: white; display: flex; align-items: center;
+            padding: 0 10px; border-bottom: 3px solid var(--primary);
+        }
+
+        .school-logo-img { width: 55px; height: 55px; object-fit: contain; }
+        .header-text { flex-grow: 1; text-align: center; }
+        .school-name { font-weight: 800; color: var(--primary); margin: 0; text-transform: uppercase; line-height: 1.2; }
+        .city-name { font-size: 18px; font-weight: 800; color: var(--accent); margin: 0; letter-spacing: 4px; line-height: 1;}
+
+        .body-content { padding: 10px 15px; position: relative; height: 100px; }
+        .pass-badge {
+            display: inline-block; background: var(--primary); color: white;
+            padding: 2px 18px; border-radius: 50px; font-size: 11px;
+            font-weight: 600; margin-bottom: 5px; position: relative; left: 50%; transform: translateX(-50%);
+        }
+
+        .details { 
+            position: relative; z-index: 10; font-size: 21px; 
+            font-weight: 700; color: #1e293b; line-height: 1.6; padding-right: 90px; 
+        }
+        .label { color: #64748b; font-size: 14px; width: 85px; display: inline-block; font-weight: 600; }
+
+        .character-img { 
+            position: absolute; right: 5px; top: 12px; 
+            height: 125px; z-index: 15; mix-blend-mode: multiply; 
+        }
+
+        .footer {
+            position: absolute; bottom: 0; width: 100%; height: 50px;
+            background: #f8fafc; border-top: 1px dashed #cbd5e1;
+            display: flex; justify-content: space-between; align-items: flex-end; 
+            padding: 0 15px 8px 15px; box-sizing: border-box;
+        }
+        .footer span { font-weight: 800; font-size: 14px; }
+        .f-prin { color: var(--primary); }
+        .f-type { color: var(--accent); margin-right: 15px; }
+
+        .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -40%); width: 100px; opacity: 0.05; }
+
+        /* --- PRINT SETTINGS --- */
+        @media print {
+            .sidebar, .excel-view { display: none !important; }
+            .viewport { display: block; overflow: visible; width: 100%; }
+            body { background: white; height: auto; }
+            .preview-area { padding: 0; margin: 0; overflow: visible; display: block; }
+            .a4-page {
+                box-shadow: none;
+                margin: 0;
+                padding: 10mm 5mm;
+                border: none;
+            }
+            .card { box-shadow: none; border: 2.2px solid #000 !important; -webkit-print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>Pass Dashboard</h2>
+        
+        <div class="sidebar-section">
+            <label>1. Customize Logos</label>
+            <input type="file" onchange="loadLogo(event, 'school')" title="School Logo">
+            <label>Boy Character:</label>
+            <input type="file" onchange="loadLogo(event, 'boy')">
+            <label>Girl Character:</label>
+            <input type="file" onchange="loadLogo(event, 'girl')">
+        </div>
+
+        <div class="sidebar-section">
+            <label>2. Data Source</label>
+            <input type="file" id="excel_file" accept=".xlsx, .xls">
+            <div id="sheet_box" style="display:none;">
+                <label>Active Sheet:</label>
+                <select id="sheet_list" onchange="changeSheet()"></select>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <label>3. Branding</label>
+            <button class="preset-btn" onclick="setPreset('ADARSH PUBLIC SCHOOL')">ADARSH PUBLIC SCHOOL</button>
+            <button class="preset-btn" onclick="setPreset('ADARSH VIDYA NIKETAN SR. SEC. SCHOOL')">ADARSH VIDYA NIKETAN</button>
+            
+            <label>School Name:</label>
+            <input type="text" id="manual_school" value="ADARSH VIDYA NIKETAN SR. SEC. SCHOOL" oninput="updateCardsLive()">
+            
+            <label>City Name:</label>
+            <input type="text" id="manual_city" value="PILANI" oninput="updateCardsLive()">
+            
+            <label>Font Size:</label>
+            <input type="range" id="font_slider" min="8" max="22" value="11" oninput="updateCardsLive()">
+        </div>
+        
+        <button class="print-btn" onclick="window.print()">Print Cards (8/Page)</button>
+    </div>
+
+    <div class="viewport">
+        <div class="preview-area" id="page-container">
+            <!-- Pages will be generated here -->
+            <div style="color: #64748b; margin-top: 150px; text-align: center;">
+                <h3>कृपया एक्सेल फ़ाइल अपलोड करें</h3>
+            </div>
+        </div>
+
+        <div class="excel-view">
+            <h3>Sheet Explorer</h3>
+            <div id="excel_table_container"></div>
+        </div>
+    </div>
+
+    <script>
+        let workbook = null;
+        let currentData = [];
+        let logos = {
+            school: "https://raw.githubusercontent.com/hiteshjangir8057/Adarsh-Pilani-id-Card-Logo/refs/heads/main/Adarsh%20logo.png",
+            boy: "https://raw.githubusercontent.com/hiteshjangir8057/Adarsh-Pilani-id-Card-Logo/refs/heads/main/Boy%20Logo.png",
+            girl: "https://raw.githubusercontent.com/hiteshjangir8057/Adarsh-Pilani-id-Card-Logo/refs/heads/main/Girl%20Logo.png"
+        };
+
+        function loadLogo(e, type) {
+            const file = e.target.files[0];
+            if(file) {
+                logos[type] = URL.createObjectURL(file);
+                updateCardsLive();
+            }
+        }
+
+        function setPreset(name) {
+            document.getElementById('manual_school').value = name;
+            updateCardsLive();
+        }
+
+        function splitInfo(raw) {
+            if (!raw) return { cls: "N/A", sec: "N/A" };
+            let str = raw.toString().toUpperCase().trim();
+            let medium = str.includes("ENGLISH") ? "EM" : (str.includes("HINDI") ? "HM" : "");
+            let house = "";
+            ["SUN", "MOON", "STAR"].forEach(h => { if (str.includes(h)) house = h; });
+            let stream = "";
+            if (str.includes("NON MED")) stream = "NON MED";
+            else if (str.includes("MED")) stream = "MED";
+            else if (str.includes("ART")) stream = "ART";
+            let base = str.split(" ")[0]; 
+            return {
+                cls: base + (stream ? " " + stream : ""),
+                sec: [medium, house].filter(x => x).join("-") || "N/A"
+            };
+        }
+
+        document.getElementById('excel_file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                workbook = XLSX.read(data, {type: 'array'});
+                const dropdown = document.getElementById('sheet_list');
+                dropdown.innerHTML = "";
+                workbook.SheetNames.forEach(name => {
+                    let opt = document.createElement('option');
+                    opt.value = name; opt.innerText = name;
+                    dropdown.appendChild(opt);
+                });
+                document.getElementById('sheet_box').style.display = "block";
+                changeSheet();
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function changeSheet() {
+            const sheetName = document.getElementById('sheet_list').value;
+            const sheet = workbook.Sheets[sheetName];
+            currentData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+            renderExcelTable(currentData);
+            updateCardsLive();
+        }
+
+        function renderExcelTable(data) {
+            const container = document.getElementById('excel_table_container');
+            if(data.length === 0) { container.innerHTML = "Sheet is empty."; return; }
+            let html = "<table><thead><tr>";
+            Object.keys(data[0]).forEach(k => html += `<th>${k}</th>`);
+            html += "</tr></thead><tbody>";
+            data.forEach(row => {
+                html += "<tr>";
+                Object.values(row).forEach(v => html += `<td>${v}</td>`);
+                html += "</tr>";
+            });
+            html += "</tbody></table>";
+            container.innerHTML = html;
+        }
+
+        function updateCardsLive() {
+            const container = document.getElementById('page-container');
+            const school = document.getElementById('manual_school').value;
+            const city = document.getElementById('manual_city').value;
+            const size = document.getElementById('font_slider').value;
+
+            if (currentData.length === 0) return;
+            container.innerHTML = "";
+
+            let allCards = [];
+            currentData.forEach(row => {
+                const keys = Object.keys(row);
+                const classKey = keys.find(k => k.toUpperCase() === "CLASS");
+                const sectionKey = keys.find(k => k.toUpperCase() === "SECTION");
+                let fCls = "", fSec = "";
+
+                if (classKey && sectionKey) {
+                    fCls = row[classKey]; fSec = row[sectionKey];
+                } else if (classKey) {
+                    const p = splitInfo(row[classKey]);
+                    fCls = p.cls; fSec = p.sec;
+                }
+
+                if (fCls) {
+                    allCards.push(buildCardHTML(fCls, fSec, "BOY", school, city, size));
+                    allCards.push(buildCardHTML(fCls, fSec, "GIRL", school, city, size));
+                }
+            });
+
+            // Page Batching Logic (8 Cards per page)
+            for (let i = 0; i < allCards.length; i += 8) {
+                let page = document.createElement('div');
+                page.className = 'a4-page';
+                let pageCards = allCards.slice(i, i + 8);
+                page.innerHTML = pageCards.join("");
+                container.appendChild(page);
+            }
+        }
+
+        function buildCardHTML(cls, sec, type, school, city, fSize) {
+            const charImg = type === "BOY" ? logos.boy : logos.girl;
+            return `
+                <div class="card">
+                    <div class="header">
+                        <img class="school-logo-img" src="${logos.school}">
+                        <div class="header-text">
+                            <h1 class="school-name" style="font-size:${fSize}px">${school}</h1>
+                            <h2 class="city-name">${city}</h2>
+                        </div>
+                    </div>
+                    <div class="body-content">
+                        <div class="pass-badge">STUDENT OUT PASS</div>
+                        <div class="details">
+                            <div><span class="label">CLASS</span> : ${cls}</div>
+                            <div><span class="label">SECTION</span> : ${sec}</div>
+                        </div>
+                        <img class="character-img" src="${charImg}">
+                    </div>
+                    <div class="footer">
+                        <span class="f-prin">PRINCIPAL</span>
+                        <span class="f-type">${type}</span>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
