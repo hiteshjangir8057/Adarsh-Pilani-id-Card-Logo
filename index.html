@@ -177,8 +177,8 @@
     </div>
 
     <script>
-        let workbook = null, currentData = [];
-        let deletedCardsStack = []; 
+        let workbook = null, currentData =[];
+        let deletedCardsStack =[]; 
         let logos = {
             school: "https://raw.githubusercontent.com/hiteshjangir8057/Adarsh-Pilani-id-Card-Logo/refs/heads/main/Adarsh%20logo.png",
             boy: "https://raw.githubusercontent.com/hiteshjangir8057/Adarsh-Pilani-id-Card-Logo/refs/heads/main/Boy%20Logo.png",
@@ -241,7 +241,7 @@
         function changeSheet() {
             const name = document.getElementById('sheet_list').value;
             currentData = XLSX.utils.sheet_to_json(workbook.Sheets[name], { defval: "" });
-            deletedCardsStack = [];
+            deletedCardsStack =[];
             renderExcelTable(currentData);
             updateCardsLive();
         }
@@ -270,7 +270,7 @@
 
             if (!currentData.length) return;
             container.innerHTML = "";
-            let cards = [];
+            let cards =[];
 
             currentData.forEach((row, rIdx) => {
                 const keys = Object.keys(row);
@@ -281,8 +281,9 @@
                 let bQty = bKey ? (row[bKey] === "" ? 0 : parseInt(row[bKey]) || 0) : defB;
                 let gQty = gKey ? (row[gKey] === "" ? 0 : parseInt(row[gKey]) || 0) : defG;
 
-                let cls = row[keys.find(k => k.toUpperCase() === "CLASS")] || "N/A";
-                let sec = row[keys.find(k => k.toUpperCase() === "SECTION")] || "N/A";
+                // N/A ki jagah blank string ("") diya gaya hai
+                let cls = row[keys.find(k => k.toUpperCase() === "CLASS")] || "";
+                let sec = row[keys.find(k => k.toUpperCase() === "SECTION")] || "";
 
                 for(let i=0; i<bQty; i++) cards.push(buildHTML(cls, sec, "BOY", school, city, rIdx, i, 'B'));
                 for(let i=0; i<gQty; i++) cards.push(buildHTML(cls, sec, "GIRL", school, city, rIdx, i, 'G'));
